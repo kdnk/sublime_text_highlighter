@@ -19,33 +19,35 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
 
     views = self.window.views()
     if is_highlighted(sel_string):
+      color = find_used_color(sel_string)
       for view in views:
-        eraser(view, sel_string)
+        eraser(view, sel_string, color)
     else:
+      color = find_usable_color(sel_string)
       for view in views:
-        highlighter(view, sel_string)
+        highlighter(view, sel_string, color)
     print(COLORS_BY_SCOPE)
 
 class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
   def run(self):
     views = self.window.views()
     for sel_string in COLORS_BY_SCOPE.values():
+      color = find_used_color(sel_string)
       for view in views:
         if sel_string:
-          eraser(view, sel_string)
+          eraser(view, sel_string, color)
     print(COLORS_BY_SCOPE)
 
 
-def highlighter(view, sel_string):
+def highlighter(view, sel_string, color):
   regions = find_all(view, sel_string)
-  color = find_usable_color(sel_string)
   if color:
-    COLORS_BY_SCOPE[color] = sel_string
-    view.add_regions(sel_string, regions, color, 'circle')
+    if not COLORS_BY_SCOPE[color]:
+      COLORS_BY_SCOPE[color] = sel_string
+      view.add_regions(sel_string, regions, color, 'circle')
 
-def eraser(view, sel_string):
+def eraser(view, sel_string, color):
   regions = find_all(view, sel_string)
-  color = find_used_color(sel_string)
   COLORS_BY_SCOPE[color] = None
   view.erase_regions(sel_string)
 
