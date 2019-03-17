@@ -31,7 +31,6 @@ class ClearAllHighlightCommand(sublime_plugin.WindowCommand):
     for sel_string in COLORS_BY_SCOPE.values():
       for view in views:
         if sel_string:
-          print('sel_string: ', sel_string)
           eraser(view, sel_string)
 
 
