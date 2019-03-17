@@ -5,12 +5,15 @@ import re
 from collections import OrderedDict
 
 COLORS_BY_SCOPE = OrderedDict()
-COLORS_BY_SCOPE['string'] = None
-COLORS_BY_SCOPE['entity.name.class'] = None
-COLORS_BY_SCOPE['variable.parameter'] = None
-COLORS_BY_SCOPE['invalid.deprecated'] = None
-COLORS_BY_SCOPE['invalid'] = None
-COLORS_BY_SCOPE['support.function'] = None
+COLORS_BY_SCOPE['markup.changed.git_gutter'] = None # vivid purple
+COLORS_BY_SCOPE['markup.deleted.git_gutter'] = None # vivid pink
+COLORS_BY_SCOPE['support.class'] = None # yellow
+COLORS_BY_SCOPE['markup.inserted.git_gutter'] = None # vivid green
+COLORS_BY_SCOPE['constant.numeric'] = None # orange
+COLORS_BY_SCOPE['constant.character.escape'] = None # light blue
+COLORS_BY_SCOPE['variable'] = None # red
+COLORS_BY_SCOPE['string'] = None # light green
+COLORS_BY_SCOPE['comment'] = None # glay
 
 class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
   def run(self):
@@ -50,7 +53,13 @@ def highlighter(view, sel_string, color):
   if color:
     if not COLORS_BY_SCOPE[color]:
       COLORS_BY_SCOPE[color] = sel_string
-    view.add_regions(sel_string, regions, color, 'circle')
+    view.add_regions(
+      sel_string,
+      regions,
+      color,
+      'dot',
+      sublime.DRAW_NO_OUTLINE
+      )
 
 def eraser(view, sel_string, color):
   regions = find_all(view, sel_string)
