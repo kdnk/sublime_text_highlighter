@@ -25,6 +25,16 @@ class HighlighterToggleCommand(sublime_plugin.WindowCommand):
       for view in views:
         highlighter(view, sel_string)
 
+class ClearAllHighlightCommand(sublime_plugin.WindowCommand):
+  def run(self):
+    views = self.window.views()
+    for sel_string in COLORS_BY_SCOPE.values():
+      for view in views:
+        if sel_string:
+          print('sel_string: ', sel_string)
+          eraser(view, sel_string)
+
+
 def highlighter(view, sel_string):
   regions = find_all(view, sel_string)
   color = find_usable_color(sel_string)
