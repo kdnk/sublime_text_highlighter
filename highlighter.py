@@ -11,7 +11,7 @@ COLORS_BY_SCOPE['invalid.deprecated'] = None
 COLORS_BY_SCOPE['invalid'] = None
 COLORS_BY_SCOPE['support.function'] = None
 
-class HighlighterToggleCommand(sublime_plugin.WindowCommand):
+class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
   def run(self):
     active_view = self.window.active_view()
     selected_region = active_view.sel()
@@ -24,14 +24,16 @@ class HighlighterToggleCommand(sublime_plugin.WindowCommand):
     else:
       for view in views:
         highlighter(view, sel_string)
+    print(COLORS_BY_SCOPE)
 
-class ClearAllHighlightCommand(sublime_plugin.WindowCommand):
+class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
   def run(self):
     views = self.window.views()
     for sel_string in COLORS_BY_SCOPE.values():
       for view in views:
         if sel_string:
           eraser(view, sel_string)
+    print(COLORS_BY_SCOPE)
 
 
 def highlighter(view, sel_string):

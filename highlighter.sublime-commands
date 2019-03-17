@@ -1,5 +1,5 @@
 [
-    {"caption":"SublimeHighlighter: Toggle","command":"highlighter_toggle"},
-    {"caption":"SublimeHighlighter: Clear all highlight","command":"clear_all_highlight"}
+    {"caption":"TextHighlighter: Toggle","command":"text_highlighter_toggle"},
+    {"caption":"TextHighlighter: Clear all","command":"text_highlighter_clear_all"}
 ]
 
