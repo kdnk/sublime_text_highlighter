@@ -11,7 +11,7 @@ COLORS_BY_SCOPE['invalid.deprecated'] = None
 COLORS_BY_SCOPE['invalid'] = None
 COLORS_BY_SCOPE['support.function'] = None
 
-class SelectAreaCommand(sublime_plugin.WindowCommand):
+class HighlighterToggleCommand(sublime_plugin.WindowCommand):
   def run(self):
     active_view = self.window.active_view()
     selected_region = active_view.sel()

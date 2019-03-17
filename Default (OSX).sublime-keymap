@@ -1,4 +1,3 @@
 [
-  { "keys": ["ctrl+super+j"], "command": "select_area" },
-  { "keys": ["ctrl+super+h"], "command": "erase_highlight" }
+  { "keys": ["ctrl+super+j"], "command": "highlighter_toggle" },
 ]
