@@ -4,14 +4,12 @@ import sublime_plugin
 from collections import OrderedDict
 
 COLORS_BY_SCOPE = OrderedDict()
-COLORS_BY_SCOPE['string'] = False
-COLORS_BY_SCOPE['entity.name.class'] = False
-COLORS_BY_SCOPE['variable.parameter'] = False
-COLORS_BY_SCOPE['invalid.deprecated'] = False
-COLORS_BY_SCOPE['invalid'] = False
-COLORS_BY_SCOPE['support.function'] = False
-
-SELECTED_STRINGS = set()
+COLORS_BY_SCOPE['string'] = None
+COLORS_BY_SCOPE['entity.name.class'] = None
+COLORS_BY_SCOPE['variable.parameter'] = None
+COLORS_BY_SCOPE['invalid.deprecated'] = None
+COLORS_BY_SCOPE['invalid'] = None
+COLORS_BY_SCOPE['support.function'] = None
 
 class SelectAreaCommand(sublime_plugin.WindowCommand):
   def run(self):
@@ -20,30 +18,43 @@ class SelectAreaCommand(sublime_plugin.WindowCommand):
     sel_string = active_view.substr(selected_region[0])
 
     views = self.window.views()
-    for view in views:
-      regions = find_regexes(view, sel_string)
-      color = find_color()
-
-      if sel_string not in SELECTED_STRINGS:
-        view.add_regions(sel_string, regions, color, 'circle')
-        SELECTED_STRINGS.add(sel_string)
-      else:
+    if is_highlighted(sel_string):
+      for view in views:
+        # erase
+        regions = find_regexes(view, sel_string)
+        color = find_used_color(sel_string)
+        COLORS_BY_SCOPE[color] = None
         view.erase_regions(sel_string)
-        SELECTED_STRINGS.remove(sel_string)
-
-      print('SELECTED_STRINGS: ', SELECTED_STRINGS)
-      print('COLORS_BY_SCOPE: ', COLORS_BY_SCOPE)
-
-
+    else:
+      for view in views:
+        # highlight
+        regions = find_regexes(view, sel_string)
+        color = find_usable_color(sel_string)
+        COLORS_BY_SCOPE[color] = sel_string
+        view.add_regions(sel_string, regions, color, 'circle')
 
 def find_regexes(view, sel_string):
   return view.find_all(sel_string)
 
-def find_color():
-  color = ""
+def is_highlighted(sel_string):
+  highlighted = False
   for key, value in COLORS_BY_SCOPE.items():
-    if value == False:
-      COLORS_BY_SCOPE[key] = True
+    if value == sel_string:
+      highlighted = True
+      break
+  return highlighted
+
+def find_used_color(sel_string):
+  color = None
+  for key, value in COLORS_BY_SCOPE.items():
+    if value == sel_string:
+      color = key
+  return color
+
+def find_usable_color(sel_string):
+  color = ''
+  for key, value in COLORS_BY_SCOPE.items():
+    if not value:
       color = key
       break
   return color
