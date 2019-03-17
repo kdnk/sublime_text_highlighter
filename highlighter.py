@@ -18,6 +18,11 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
     selected_region = active_view.sel()
     sel_string = active_view.substr(selected_region[0])
 
+    # Get word on cursor if any region isn't selected.
+    if not sel_string:
+      word_region = active_view.word(selected_region[0])
+      sel_string = active_view.substr(word_region)
+
     views = self.window.views()
     if is_highlighted(sel_string):
       color = find_used_color(sel_string)
