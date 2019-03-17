@@ -4,10 +4,10 @@ import sublime_plugin
 import re
 from collections import OrderedDict
 
-COLORS_BY_SCOPE = OrderedDict()
+COLORS_BY_SCOPE = OrderedDict() # TODO: Make color configurable
 COLORS_BY_SCOPE['markup.changed.git_gutter'] = None # vivid purple
-COLORS_BY_SCOPE['markup.deleted.git_gutter'] = None # vivid pink
 COLORS_BY_SCOPE['support.class'] = None # yellow
+COLORS_BY_SCOPE['markup.deleted.git_gutter'] = None # vivid pink
 COLORS_BY_SCOPE['markup.inserted.git_gutter'] = None # vivid green
 COLORS_BY_SCOPE['constant.numeric'] = None # orange
 COLORS_BY_SCOPE['constant.character.escape'] = None # light blue
