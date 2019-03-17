@@ -71,7 +71,7 @@ def find_used_color(sel_string):
   return color
 
 def find_usable_color(sel_string):
-  color = ''
+  color = None
   for key, value in COLORS_BY_SCOPE.items():
     if not value:
       color = key
