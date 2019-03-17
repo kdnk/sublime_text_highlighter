@@ -11,6 +11,8 @@ COLORS_BY_SCOPE['invalid.deprecated'] = False
 COLORS_BY_SCOPE['invalid'] = False
 COLORS_BY_SCOPE['support.function'] = False
 
+SELECTED_STRINGS = set()
+
 class SelectAreaCommand(sublime_plugin.WindowCommand):
   def run(self):
     active_view = self.window.active_view()
@@ -21,17 +23,18 @@ class SelectAreaCommand(sublime_plugin.WindowCommand):
     for view in views:
       regions = find_regexes(view, sel_string)
       color = find_color()
-      view.add_regions(sel_string, regions, color, 'circle')
 
-class EraseHighlightCommand(sublime_plugin.WindowCommand):
-  def run(self):
-    active_view = self.window.active_view()
-    selected_region = active_view.sel()
-    sel_string = active_view.substr(selected_region[0])
+      if sel_string not in SELECTED_STRINGS:
+        view.add_regions(sel_string, regions, color, 'circle')
+        SELECTED_STRINGS.add(sel_string)
+      else:
+        view.erase_regions(sel_string)
+        SELECTED_STRINGS.remove(sel_string)
 
-    views = self.window.views()
-    for view in views:
-      view.erase_regions(sel_string)
+      print('SELECTED_STRINGS: ', SELECTED_STRINGS)
+      print('COLORS_BY_SCOPE: ', COLORS_BY_SCOPE)
+
+
 
 def find_regexes(view, sel_string):
   return view.find_all(sel_string)
