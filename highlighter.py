@@ -30,8 +30,9 @@ class HighlighterToggleCommand(sublime_plugin.WindowCommand):
         # highlight
         regions = find_regexes(view, sel_string)
         color = find_usable_color(sel_string)
-        COLORS_BY_SCOPE[color] = sel_string
-        view.add_regions(sel_string, regions, color, 'circle')
+        if color:
+          COLORS_BY_SCOPE[color] = sel_string
+          view.add_regions(sel_string, regions, color, 'circle')
 
 def find_regexes(view, sel_string):
   return view.find_all(sel_string)
