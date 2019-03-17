@@ -2,10 +2,6 @@ import sublime
 import sublime_plugin
 
 
-class ExampleCommand(sublime_plugin.TextCommand):
-  def run(self, edit):
-    self.view.insert(edit, 0, "Hello, World!")
-
 class SelectAreaCommand(sublime_plugin.WindowCommand):
   def run(self):
     active_view = self.window.active_view()
@@ -15,7 +11,7 @@ class SelectAreaCommand(sublime_plugin.WindowCommand):
     views = self.window.views()
     for view in views:
       regions = find_regexes(view, sel_string)
-      view.add_regions(sel_string, regions, 'comment')
+      view.add_regions(sel_string, regions, 'keyword', 'circle')
 
 class EraseHighlightCommand(sublime_plugin.WindowCommand):
   def run(self):
