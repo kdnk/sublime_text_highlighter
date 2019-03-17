@@ -1,6 +1,7 @@
 import sublime
 import sublime_plugin
 
+import re
 from collections import OrderedDict
 
 COLORS_BY_SCOPE = OrderedDict()
@@ -25,7 +26,6 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
     else:
       color = find_usable_color(sel_string)
       for view in views:
-        print(view)
         highlighter(view, sel_string, color)
     print(COLORS_BY_SCOPE)
 
@@ -53,7 +53,7 @@ def eraser(view, sel_string, color):
   view.erase_regions(sel_string)
 
 def find_all(view, sel_string):
-  return view.find_all(sel_string)
+  return view.find_all(re.escape(sel_string))
 
 def is_highlighted(sel_string):
   highlighted = False
