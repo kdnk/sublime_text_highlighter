@@ -20,21 +20,25 @@ class HighlighterToggleCommand(sublime_plugin.WindowCommand):
     views = self.window.views()
     if is_highlighted(sel_string):
       for view in views:
-        # erase
-        regions = find_regexes(view, sel_string)
-        color = find_used_color(sel_string)
-        COLORS_BY_SCOPE[color] = None
-        view.erase_regions(sel_string)
+        eraser(view, sel_string)
     else:
       for view in views:
-        # highlight
-        regions = find_regexes(view, sel_string)
-        color = find_usable_color(sel_string)
-        if color:
-          COLORS_BY_SCOPE[color] = sel_string
-          view.add_regions(sel_string, regions, color, 'circle')
+        highlighter(view, sel_string)
 
-def find_regexes(view, sel_string):
+def highlighter(view, sel_string):
+  regions = find_all(view, sel_string)
+  color = find_usable_color(sel_string)
+  if color:
+    COLORS_BY_SCOPE[color] = sel_string
+    view.add_regions(sel_string, regions, color, 'circle')
+
+def eraser(view, sel_string):
+  regions = find_all(view, sel_string)
+  color = find_used_color(sel_string)
+  COLORS_BY_SCOPE[color] = None
+  view.erase_regions(sel_string)
+
+def find_all(view, sel_string):
   return view.find_all(sel_string)
 
 def is_highlighted(sel_string):
