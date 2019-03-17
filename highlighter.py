@@ -36,7 +36,6 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
       color = find_usable_color(sel_string)
       for view in views:
         highlighter(view, sel_string, color)
-    print(COLORS_BY_SCOPE)
 
 class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
   def run(self):
@@ -46,7 +45,14 @@ class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
       for view in views:
         if sel_string:
           eraser(view, sel_string, color)
+
+class HighlighterCommand(sublime_plugin.EventListener):
+  def on_new(self, view):
+    print('Hello')
     print(COLORS_BY_SCOPE)
+    for color, sel_string in COLORS_BY_SCOPE.items():
+      if sel_string:
+        highlighter(view, sel_string, color)
 
 
 def highlighter(view, sel_string, color):
