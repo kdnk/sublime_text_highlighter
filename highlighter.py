@@ -16,6 +16,7 @@ COLORS_BY_SCOPE['string'] = None # light green
 COLORS_BY_SCOPE['comment'] = None # glay
 
 class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
+  # TODO: run this command when new tab is opened
   def run(self):
     active_view = self.window.active_view()
     selected_region = active_view.sel()
