@@ -1,0 +1,5 @@
+[
+    {"caption":"example plugin.","command":"example"},
+    {"caption":"select_area plugin.","command":"select_area"},
+    {"caption":"erase plugin.","command":"erase_highlight"}
+]
