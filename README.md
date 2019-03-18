@@ -1,5 +1,11 @@
 # TextHighlighter
 
+## How to install
+
+- Type `Add Repository` into command palette
+- `Install Package`
+- Choose `Text Highlighter`
+
 ## Keybinding
 
 ### with NeoVintageous https://github.com/NeoVintageous/NeoVintageous
