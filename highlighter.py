@@ -36,28 +36,36 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
       color = find_usable_color(sel_string)
       for view in views:
         highlighter(view, sel_string, color)
+    print('COLORS_BY_SCOPE1: ', COLORS_BY_SCOPE)
+
+
 
 class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
   def run(self):
     views = self.window.views()
     for sel_string in COLORS_BY_SCOPE.values():
-      color = find_used_color(sel_string)
-      for view in views:
-        if sel_string:
-          eraser(view, sel_string, color)
+      if sel_string:
+        color = find_used_color(sel_string)
+        if color:
+          for view in views:
+              eraser(view, sel_string, color)
 
 class HighlighterCommand(sublime_plugin.EventListener):
-  def on_new(self, view):
-    print('Hello')
-    print(COLORS_BY_SCOPE)
+  def on_pre_save(self, view):
+    print('------------------ START ------------------')
+    print('COLORS_BY_SCOPE2: ', COLORS_BY_SCOPE)
     for color, sel_string in COLORS_BY_SCOPE.items():
-      if sel_string:
+      if color and sel_string:
         highlighter(view, sel_string, color)
+    print('COLORS_BY_SCOPE3: ', COLORS_BY_SCOPE)
+    print('------------------ END ------------------')
 
 
 def highlighter(view, sel_string, color):
+  print('COLORS_BY_SCOPE4: ', COLORS_BY_SCOPE)
   regions = find_all(view, sel_string)
-  if color:
+  print('regions3: ', regions)
+  if color and regions:
     if not COLORS_BY_SCOPE[color]:
       COLORS_BY_SCOPE[color] = sel_string
     view.add_regions(
