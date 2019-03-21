@@ -7,8 +7,7 @@ from collections import OrderedDict
 class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
   def __init__(self, window):
     super().__init__(window)
-    if not window.project_data():
-      window.set_project_data(init_color())
+    window.set_project_data(init_color())
 
   # TODO: run this command when new tab is opened
   def run(self):
@@ -32,6 +31,10 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
         highlighter(view, sel_string, color)
 
 class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
+  def __init__(self, window):
+    super().__init__(window)
+    window.set_project_data(init_color())
+
   def run(self):
     window =self.window
     views = self.window.views()
@@ -42,10 +45,13 @@ class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
         if color:
           for view in views:
               eraser(view, sel_string, color)
+    window.set_project_data(init_color())
+
 
 class HighlighterCommand(sublime_plugin.EventListener):
   def on_modified(self, view):
     window = view.window()
+    print('window in on_modified --------------------: ', window)
     colors_by_scope = window.project_data()
     views = window.views()
     for view in views:
@@ -56,6 +62,8 @@ class HighlighterCommand(sublime_plugin.EventListener):
 def highlighter(view, sel_string, color):
   window = view.window()
   colors_by_scope = window.project_data()
+  print('--------------------- colors_by_scope in highlighter ---------- : ', colors_by_scope)
+
   regions = find_all(view, sel_string)
   if color and regions:
     if not colors_by_scope[color]:
