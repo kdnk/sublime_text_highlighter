@@ -1,5 +1,7 @@
 # TextHighlighter
 
+![](https://user-images.githubusercontent.com/15260226/54765330-a61a4900-4c3c-11e9-99b4-8fd7a41c2be0.gif)
+
 ## How to install
 
 - Type `Add Repository` into command palette
