@@ -113,7 +113,7 @@ def find_usable_color(window, sel_string):
 def plugin_loaded():
   global colors_by_scope
 
-  if colors_by_scope: # Return colors_by_scope if colors_by_scope is already exists.
+  if 'colors_by_scope' in globals(): # Return colors_by_scope if colors_by_scope is already exists.
     return colors_by_scope
 
   colors_by_scope = OrderedDict() # TODO: Make color configurable
