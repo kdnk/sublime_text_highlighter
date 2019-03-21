@@ -41,20 +41,24 @@ class TextHighlighterClearAllCommand(sublime_plugin.WindowCommand):
 
 
 class HighlighterCommand(sublime_plugin.EventListener):
-  def on_modified(self, view):
-    window = view.window()
-    print('window in on_modified --------------------: ', window)
-    views = window.views()
-    for view in views:
-      for color, sel_string in colors_by_scope.items():
-        if color and sel_string:
-          highlighter(view, sel_string, color)
+  def on_activated(self, view):
+    highlightAll(view)
 
+  def on_modified(self, view):
+    highlightAll(view)
+
+def highlightAll(view):
+  window = view.window()
+  views = window.views()
+
+  for view in views:
+    for color, sel_string in colors_by_scope.items():
+      if color and sel_string:
+        highlighter(view, sel_string, color)
 
 def highlighter(view, sel_string, color):
   global colors_by_scope
   window = view.window()
-  print('--------------------- colors_by_scope in highlighter ---------- : ', colors_by_scope)
 
   regions = find_all(view, sel_string)
   if color and regions:
