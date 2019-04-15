@@ -21,7 +21,7 @@ nnoremap <leader>c :TextHighlighterClearAll<CR>
 
 ### normal keymap
 
-Put settings like blow to your keybinding file.
+Put settings like below to your keybinding file.
 
 ```
 { "keys": ["ctrl+super+j"], "command": "text_highlighter_toggle" }
