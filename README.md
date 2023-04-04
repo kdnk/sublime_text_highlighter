@@ -24,9 +24,14 @@ nnoremap <leader>c :TextHighlighterClearAll<CR>
 Put settings like below to your keybinding file.
 
 ```
-{ "keys": ["ctrl+super+j"], "command": "text_highlighter_toggle" }
+{ "keys": ["ctrl+super+j"], "command": "text_highlighter_toggle" }`
+{ "keys": ["ctrl+super+j"], "command": "text_highlighter_toggle", "args": { "color": "markup.changed.git_gutter"} }
 { "keys": ["ctrl+super+h"], "command": "text_highlighter_clear_all" }
 ```
+
+### Available colors by scope
+
+`[ markup.changed.git_gutter, support.class, markup.deleted.git_gutter, markup.inserted.git_gutter, constant.numeric, constant.character.escape, variable, string, comment ] `
 
 ## Inspired
 
