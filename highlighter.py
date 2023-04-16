@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
   # TODO: run this command when new tab is opened
-  def run(self):
+  def run(self, color=None):
     active_view = self.window.active_view()
     selected_region = active_view.sel()
     sel_string = active_view.substr(selected_region[0])
@@ -22,7 +22,8 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
       for view in views:
         eraser(view, sel_string, color)
     else:
-      color = find_usable_color(self.window, sel_string)
+      if not color:
+          color = find_usable_color(self.window, sel_string)
       for view in views:
         highlighter(view, sel_string, color)
 
