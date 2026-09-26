@@ -50,6 +50,8 @@ class HighlighterCommand(sublime_plugin.EventListener):
 
 def highlightAll(view):
   window = view.window()
+  if window is None:
+    return
   views = window.views()
 
   for view in views:
