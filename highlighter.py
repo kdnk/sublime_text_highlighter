@@ -14,6 +14,10 @@ DEFAULT_SCOPES = (
   'variable',
   'string',
   'comment',
+  'keyword',
+  'entity.name.function',
+  'entity.name.tag',
+  'markup.heading',
 )
 colors_by_scope = OrderedDict()
 
@@ -49,10 +53,13 @@ class TextHighlighterToggleCommand(sublime_plugin.WindowCommand):
         if colors_by_scope[color] is not None:
           sublime.status_message('TextHighlighter: Scope is already in use. Clear its highlight or choose another scope.')
           return
+        if has_color_collision(color):
+          sublime.status_message('TextHighlighter: Color is already in use. Clear its highlight or choose another scope.')
+          return
       else:
-        color = find_usable_color(self.window, sel_string)
+        color = find_usable_color()
         if color is None:
-          sublime.status_message('TextHighlighter: All scopes are in use. Clear a highlight or add extra_scopes and restart Sublime Text.')
+          sublime.status_message('TextHighlighter: No distinct highlight colors are available. Clear a highlight or add extra_scopes with distinct foregrounds and restart Sublime Text.')
           return
       colors_by_scope[color] = sel_string
       for view in views:
@@ -124,15 +131,20 @@ def find_used_color(window, sel_string):
       color = key
   return color
 
-def find_usable_color(window, sel_string):
-  global colors_by_scope
+def has_color_collision(candidate_scope):
+  for window in sublime.windows():
+    for view in window.views():
+      foreground = view.style_for_scope(candidate_scope)['foreground']
+      for scope, text in colors_by_scope.items():
+        if text is not None and view.style_for_scope(scope)['foreground'] == foreground:
+          return True
+  return False
 
-  color = None
-  for key, value in colors_by_scope.items():
-    if not value:
-      color = key
-      break
-  return color
+def find_usable_color():
+  for scope, text in colors_by_scope.items():
+    if text is None and not has_color_collision(scope):
+      return scope
+  return None
 
 def plugin_loaded():
   if colors_by_scope:

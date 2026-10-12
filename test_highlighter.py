@@ -10,6 +10,7 @@ sublime = types.ModuleType("sublime")
 sublime.DRAW_NO_OUTLINE = 0
 sublime.load_settings = Mock()
 sublime.status_message = Mock()
+sublime.windows = Mock()
 sublime_plugin = types.ModuleType("sublime_plugin")
 
 
@@ -26,6 +27,14 @@ sys.modules["sublime_plugin"] = sublime_plugin
 import highlighter
 
 
+MONOCHROME_COLORS = dict.fromkeys((
+  "markup.changed.git_gutter", "support.class", "markup.deleted.git_gutter",
+  "markup.inserted.git_gutter", "constant.numeric", "constant.character.escape",
+  "variable", "string", "comment", "keyword", "entity.name.function",
+  "entity.name.tag", "markup.heading",
+), "#ff0000")
+
+
 class View:
   def __init__(self, text="word", window=None, scope_colors=None):
     self.text = text
@@ -33,7 +42,26 @@ class View:
     self.selection = [(0, 4)]
     self.regions = {}
     self.draw_calls = []
-    self.scope_colors = scope_colors or {}
+    self.scope_colors = {
+      "markup.changed.git_gutter": "#ff0000",
+      "support.class": "#00ff00",
+      "markup.deleted.git_gutter": "#0000ff",
+      "markup.inserted.git_gutter": "#ffff00",
+      "constant.numeric": "#ff00ff",
+      "constant.character.escape": "#00ffff",
+      "variable": "#888888",
+      "string": "#ffffff",
+      "comment": "#000000",
+      "keyword": "#ff0000",
+      "entity.name.function": "#00ff00",
+      "entity.name.tag": "#0000ff",
+      "markup.heading": "#ffff00",
+      "text_highlighter.cyan": "#00bcd4",
+      "text_highlighter.magenta": "#e040fb",
+      "custom.first": "#abcdef",
+      "custom.second": "#fedcba",
+    }
+    self.scope_colors.update(scope_colors or {})
 
   def window(self):
     return self._window
@@ -72,6 +100,7 @@ class View:
 class Window:
   def __init__(self, *views):
     self._views = list(views)
+    sublime.windows.return_value.append(self)
     for view in views:
       view._window = self
 
@@ -89,6 +118,8 @@ class HighlighterTests(unittest.TestCase):
     sublime.load_settings.side_effect = None
     sublime.load_settings.return_value = {}
     sublime.status_message.reset_mock()
+    sublime.windows.reset_mock()
+    sublime.windows.return_value = []
     self.listener = highlighter.HighlighterCommand()
 
   def load_palette(self, extras=None):
@@ -146,6 +177,167 @@ class HighlighterTests(unittest.TestCase):
     self.assertEqual(view.regions["second"],
                      ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
 
+  def test_collision_in_second_view_skips_candidate(self):
+    self.load_palette()
+    first = View("first second")
+    second = View("first second", scope_colors={"support.class": "#ff0000"})
+    window = Window(first, second)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(first.regions["second"],
+                     ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
+    self.assertEqual(second.regions["second"],
+                     ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
+
+  def test_colors_compare_within_each_view(self):
+    self.load_palette()
+    first = View("first second")
+    second = View("first second", scope_colors={
+      "markup.changed.git_gutter": "#00ff00",
+      "support.class": "#ff0000",
+    })
+    window = Window(first, second)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(second.regions["first"],
+                     ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0))
+    self.assertEqual(second.regions["second"],
+                     ("second", [(6, 12)], "support.class", "dot", 0))
+
+  def test_automatic_allocation_avoids_collisions_in_other_windows(self):
+    self.load_palette()
+    first = View("first second", scope_colors={
+      "support.class": "#ff0000",
+      "markup.deleted.git_gutter": "#00ff00",
+    })
+    first_window = Window(first)
+    self.toggle(first_window, "first")
+    second = View("first second")
+    second_window = Window(second)
+    self.toggle(second_window, "second")
+    self.listener.on_activated(first)
+    self.assertEqual(first.regions, {
+      "first": ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0),
+      "second": ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0),
+    })
+    self.assertEqual(second.regions["second"],
+                     ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
+
+  def test_explicit_scope_rejects_collision_in_other_window(self):
+    self.load_palette()
+    first = View("first second", scope_colors={"support.class": "#ff0000"})
+    first_window = Window(first)
+    self.toggle(first_window, "first")
+    second = View("first second")
+    second_window = Window(second)
+    self.toggle(second_window, "second", color="support.class")
+    self.listener.on_activated(first)
+    self.assertEqual(first.regions,
+                     {"first": ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0)})
+    self.assertEqual(second.regions, {})
+    self.assertIsNone(highlighter.colors_by_scope["support.class"])
+    sublime.status_message.assert_called_once_with(
+      "TextHighlighter: Color is already in use. Clear its highlight or choose another scope.")
+    self.toggle(second_window, "second")
+    self.assertEqual(second.regions["second"],
+                     ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
+
+  def test_explicit_duplicate_color_preserves_assignments_and_regions(self):
+    self.load_palette()
+    view = View("first second", scope_colors={"support.class": "#ff0000"})
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second", color="support.class")
+    self.assertEqual(view.regions,
+                     {"first": ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0)})
+    self.assertEqual(view.draw_calls,
+                     [("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0)])
+    self.assertIsNone(highlighter.colors_by_scope["support.class"])
+    self.assertEqual(highlighter.colors_by_scope["markup.changed.git_gutter"], "first")
+    sublime.status_message.assert_called_once_with(
+      "TextHighlighter: Color is already in use. Clear its highlight or choose another scope.")
+    self.toggle(window, "first", color="support.class")
+    self.toggle(window, "second", color="support.class")
+    self.assertEqual(view.regions,
+                     {"second": ("second", [(6, 12)], "support.class", "dot", 0)})
+
+  def test_releasing_highlight_restores_color_availability(self):
+    self.load_palette()
+    view = View("first second third", scope_colors={"support.class": "#ff0000"})
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.toggle(window, "first")
+    self.toggle(window, "third")
+    self.assertEqual(view.regions, {
+      "second": ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0),
+      "third": ("third", [(13, 18)], "markup.changed.git_gutter", "dot", 0),
+    })
+    self.assertIsNone(highlighter.colors_by_scope["support.class"])
+
+  def test_one_distinct_color_exhausts_while_duplicate_scopes_are_free(self):
+    self.load_palette()
+    view = View("first second", scope_colors=MONOCHROME_COLORS)
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(view.regions,
+                     {"first": ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0)})
+    self.assertIsNone(highlighter.colors_by_scope["support.class"])
+    sublime.status_message.assert_called_once_with(
+      "TextHighlighter: No distinct highlight colors are available. Clear a highlight or add extra_scopes with distinct foregrounds and restart Sublime Text.")
+
+  def test_unmatched_scopes_with_same_fallback_foreground_collide(self):
+    self.load_palette(["missing.first", "missing.second"])
+    view = View("first second")
+    window = Window(view)
+    self.toggle(window, "first", color="missing.first")
+    self.toggle(window, "second", color="missing.second")
+    self.assertEqual(view.regions,
+                     {"first": ("first", [(0, 5)], "missing.first", "dot", 0)})
+    sublime.status_message.assert_called_once_with(
+      "TextHighlighter: Color is already in use. Clear its highlight or choose another scope.")
+    self.toggle(window, "second")
+    self.assertEqual(view.regions["second"],
+                     ("second", [(6, 12)], "markup.changed.git_gutter", "dot", 0))
+
+  def test_extra_scopes_skip_duplicate_color(self):
+    self.load_palette(["custom.duplicate", "custom.unique"])
+    view = View("first second", scope_colors=MONOCHROME_COLORS)
+    view.scope_colors.update({"custom.duplicate": "#ff0000", "custom.unique": "#00ff00"})
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(view.regions["second"],
+                     ("second", [(6, 12)], "custom.unique", "dot", 0))
+    self.assertIsNone(highlighter.colors_by_scope["custom.duplicate"])
+
+  def test_new_default_candidate_provides_distinct_color(self):
+    self.load_palette()
+    view = View("first second", scope_colors=MONOCHROME_COLORS)
+    view.scope_colors["keyword"] = "#00ff00"
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(view.regions["second"],
+                     ("second", [(6, 12)], "keyword", "dot", 0))
+
+  def test_scheme_change_checks_fresh_colors_without_reassigning_highlights(self):
+    self.load_palette()
+    view = View("first second third", scope_colors={"support.class": "#ff0000"})
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    view.scope_colors.update({"support.class": "#0000ff", "markup.deleted.git_gutter": "#ff0000"})
+    self.listener.on_modified(view)
+    self.toggle(window, "third")
+    self.assertEqual(view.regions, {
+      "first": ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0),
+      "second": ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0),
+      "third": ("third", [(13, 18)], "support.class", "dot", 0),
+    })
+    self.assertEqual(highlighter.colors_by_scope["markup.deleted.git_gutter"], "second")
+
   def test_more_than_nine_scopes_render_across_views_and_recycle(self):
     self.load_palette(["text_highlighter.cyan", "text_highlighter.magenta"])
     first = View("w01 w02 w03 w04 w05 w06 w07 w08 w09 w10 w11 w12")
@@ -188,7 +380,7 @@ class HighlighterTests(unittest.TestCase):
     self.assertEqual(view.regions["w11"], ("w11", [(40, 43)], "custom.second", "dot", 0))
     self.assertNotIn("w12", view.regions)
     sublime.status_message.assert_called_once_with(
-      "TextHighlighter: All scopes are in use. Clear a highlight or add extra_scopes and restart Sublime Text.")
+      "TextHighlighter: No distinct highlight colors are available. Clear a highlight or add extra_scopes with distinct foregrounds and restart Sublime Text.")
 
   def test_invalid_settings_fall_back_to_defaults(self):
     for extras in ("custom.scope", None, {}, 42, [""], ["   "], [False], ["custom.scope", 7]):
@@ -201,7 +393,8 @@ class HighlighterTests(unittest.TestCase):
         self.toggle(Window(view), "word")
         self.assertEqual(view.regions["word"],
                          ("word", [(0, 4)], "markup.changed.git_gutter", "dot", 0))
-        self.assertEqual(len(highlighter.colors_by_scope), 9)
+        self.assertNotIn("custom.scope", highlighter.colors_by_scope)
+        self.assertEqual(list(highlighter.colors_by_scope), list(highlighter.DEFAULT_SCOPES))
         sublime.status_message.assert_called_once_with(
           "TextHighlighter: extra_scopes must be a list of nonempty scope strings. Using default scopes.")
 
@@ -241,7 +434,7 @@ class HighlighterTests(unittest.TestCase):
     self.assertEqual(view.regions["w09"], ("w09", [(32, 35)], "comment", "dot", 0))
     self.assertNotIn("w10", view.regions)
     sublime.status_message.assert_called_once_with(
-      "TextHighlighter: All scopes are in use. Clear a highlight or add extra_scopes and restart Sublime Text.")
+      "TextHighlighter: No distinct highlight colors are available. Clear a highlight or add extra_scopes with distinct foregrounds and restart Sublime Text.")
 
   def test_clear_all_frees_extra_scopes_across_views(self):
     self.load_palette(["custom.scope"])
