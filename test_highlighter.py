@@ -27,12 +27,13 @@ import highlighter
 
 
 class View:
-  def __init__(self, text="word", window=None):
+  def __init__(self, text="word", window=None, scope_colors=None):
     self.text = text
     self._window = window
     self.selection = [(0, 4)]
     self.regions = {}
     self.draw_calls = []
+    self.scope_colors = scope_colors or {}
 
   def window(self):
     return self._window
@@ -55,6 +56,9 @@ class View:
 
   def find_all(self, pattern):
     return [match.span() for match in re.finditer(pattern, self.text)]
+
+  def style_for_scope(self, scope):
+    return {"foreground": self.scope_colors.get(scope, "#eeeeee")}
 
   def add_regions(self, key, regions, scope, icon, flags):
     payload = (key, regions, scope, icon, flags)
@@ -126,6 +130,21 @@ class HighlighterTests(unittest.TestCase):
       ("w09", "comment"),
     ])
     sublime.load_settings.assert_called_once_with("TextHighlighter.sublime-settings")
+
+  def test_automatic_color_skips_scopes_with_duplicate_foregrounds(self):
+    self.load_palette()
+    view = View("first second", scope_colors={
+      "markup.changed.git_gutter": "#ff0000",
+      "support.class": "#ff0000",
+      "markup.deleted.git_gutter": "#00ff00",
+    })
+    window = Window(view)
+    self.toggle(window, "first")
+    self.toggle(window, "second")
+    self.assertEqual(view.regions["first"],
+                     ("first", [(0, 5)], "markup.changed.git_gutter", "dot", 0))
+    self.assertEqual(view.regions["second"],
+                     ("second", [(6, 12)], "markup.deleted.git_gutter", "dot", 0))
 
   def test_more_than_nine_scopes_render_across_views_and_recycle(self):
     self.load_palette(["text_highlighter.cyan", "text_highlighter.magenta"])
